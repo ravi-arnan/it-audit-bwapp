@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>XSS Scan Evidence - bWAPP</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; margin: 40px; line-height: 1.5; font-size: 13px; }
+  h1 { color: #b30000; border-bottom: 3px solid #b30000; padding-bottom: 8px; font-size: 22px; }
+  h2 { color: #003366; margin-top: 28px; border-left: 5px solid #003366; padding-left: 10px; font-size: 16px; }
+  h3 { color: #b35900; font-size: 14px; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #003366; color: #fff; }
+  tr:nth-child(even) { background: #f2f2f2; }
+  .meta td:first-child { width: 220px; font-weight: bold; background: #eef2f7; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 14px; border-radius: 5px;
+        overflow-x: auto; font-family: 'Consolas', monospace; font-size: 11px; white-space: pre-wrap; word-break: break-all; }
+  .crit { color: #b30000; font-weight: bold; }
+  .badge { display: inline-block; background: #b35900; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+  code { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; }
+  .footer { margin-top: 40px; font-size: 10px; color: #888; border-top: 1px solid #ccc; padding-top: 8px; }
+  .hl { background: #fff3cd; padding: 2px 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>Cross-Site Scripting (XSS) Scan Evidence</h1>
+<p><span class="badge">HIGH</span> &nbsp; Target: OWASP/bWAPP (Buggy Web Application) — Lab IT Audit</p>
+
+<h2>1. Informasi Pengujian</h2>
+<table class="meta">
+  <tr><td>Tanggal Pengujian</td><td>24 Mei 2026</td></tr>
+  <tr><td>Metode</td><td>Manual testing (HTTP request injection)</td></tr>
+  <tr><td>Target</td><td><code>http://localhost:8080/</code></td></tr>
+  <tr><td>Modul Diuji</td><td>XSS Reflected (GET) &amp; XSS Stored (Blog)</td></tr>
+  <tr><td>Security Level</td><td>Low (security_level=0)</td></tr>
+  <tr><td>Autentikasi</td><td>Session cookie (login: bee / bug)</td></tr>
+</table>
+
+<h2>2. Temuan A — Reflected XSS (GET)</h2>
+<h3>Endpoint</h3>
+<p><code>xss_get.php</code> — parameter <code>firstname</code></p>
+<h3>Payload</h3>
+<pre>http://localhost:8080/xss_get.php?firstname=&lt;script&gt;alert('XSS-bWAPP')&lt;/script&gt;&amp;lastname=test&amp;form=submit</pre>
+<h3>Bukti (response server)</h3>
+<p>Payload dipantulkan kembali ke HTML <span class="crit">tanpa output encoding</span>:</p>
+<pre>Welcome <span class="hl">&lt;script&gt;alert('XSS-bWAPP')&lt;/script&gt;</span> test</pre>
+<p>Karena tag <code>&lt;script&gt;</code> tidak di-escape menjadi <code>&amp;lt;script&amp;gt;</code>, browser korban akan mengeksekusi JavaScript tersebut. Serangan dipicu lewat link berbahaya yang dikirim ke korban.</p>
+
+<h2>3. Temuan B — Stored XSS (Blog)</h2>
+<h3>Endpoint</h3>
+<p><code>xss_stored_1.php</code> — field <code>entry</code> (POST)</p>
+<h3>Payload</h3>
+<pre>POST /xss_stored_1.php
+entry=&lt;script&gt;alert('Stored-XSS-by-Audit')&lt;/script&gt;&amp;blog=submit&amp;entry_add=</pre>
+<h3>Bukti Persistence (request GET terpisah setelah penyimpanan)</h3>
+<p>Payload <span class="crit">tersimpan permanen di database</span> dan dirender mentah ke setiap pengunjung halaman blog:</p>
+<pre>&lt;td&gt;<span class="hl">&lt;script&gt;alert('Stored-XSS-by-Audit')&lt;/script&gt;</span>&lt;/td&gt;</pre>
+<p>Berbeda dari Reflected XSS, payload ini aktif bagi <b>seluruh pengguna</b> yang membuka halaman, tanpa perlu link khusus. Catatan: payload uji telah <b>dihapus kembali</b> setelah verifikasi untuk menjaga kebersihan lab.</p>
+
+<h2>4. Penilaian Risiko</h2>
+<table>
+  <tr><th>Aspek</th><th>Keterangan</th></tr>
+  <tr><td>Severity</td><td class="crit">HIGH</td></tr>
+  <tr><td>OWASP Top 10 2021</td><td>A03:2021 Injection (Cross-Site Scripting)</td></tr>
+  <tr><td>CVSS (estimasi)</td><td>Reflected ~6.1 (Medium) &middot; Stored ~7.4 (High)</td></tr>
+  <tr><td>Root Cause</td><td>Input pengguna tidak di-sanitasi saat input dan tidak di-encode saat output (output encoding)</td></tr>
+  <tr><td>Impact</td><td>Pencurian session cookie, session hijacking, defacement, phishing, keylogging, penyebaran malware ke pengunjung</td></tr>
+  <tr><td>Faktor Pemberat</td><td>Cookie session bWAPP tidak memiliki flag <code>HttpOnly</code> (lihat temuan Nikto) sehingga cookie dapat dicuri via XSS</td></tr>
+</table>
+
+<h2>5. Rekomendasi Remediasi</h2>
+<ol>
+  <li>Terapkan <b>output encoding</b> sesuai konteks (HTML entity encoding) pada semua data yang ditampilkan, mis. <code>htmlspecialchars()</code> di PHP.</li>
+  <li>Lakukan <b>input validation</b> dengan whitelist pada sisi server.</li>
+  <li>Pasang <b>Content Security Policy (CSP)</b> untuk membatasi eksekusi script.</li>
+  <li>Set flag <b>HttpOnly</b> dan <b>Secure</b> pada cookie session agar tidak dapat diakses JavaScript.</li>
+  <li>Gunakan framework/template engine yang melakukan auto-escaping secara default.</li>
+</ol>
+
+<div class="footer">
+  Dokumen ini dihasilkan untuk keperluan mata kuliah IT Audit. Pengujian dilakukan pada lingkungan lab terisolasi (localhost).
+  bWAPP adalah aplikasi yang sengaja dibuat rentan untuk tujuan edukasi. Jangan gunakan teknik ini pada sistem tanpa izin.
+</div>
+
+</body>
+</html>

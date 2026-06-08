@@ -1,0 +1,4 @@
+id,email,login,secret,admin,password,activated,reset_code,activation_code
+1,bwapp-aim@mailinator.com,A.I.M.,A.I.M. or Authentication Is Missing,1,6885858486f31043e5839c735d99457f045affd0,1,NULL,NULL
+2,bwapp-bee@mailinator.com,bee,Any bugs?,1,6885858486f31043e5839c735d99457f045affd0,1,NULL,NULL
+

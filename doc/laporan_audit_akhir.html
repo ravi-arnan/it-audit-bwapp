@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Laporan Audit Keamanan Aplikasi Web - bWAPP</title>
+<style>
+  @page { margin: 2cm; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; line-height: 1.55; font-size: 12.5px; margin: 0; }
+  h1 { color: #003366; font-size: 24px; }
+  h2 { color: #003366; margin-top: 30px; border-bottom: 2px solid #003366; padding-bottom: 6px; font-size: 18px; }
+  h3 { color: #14477d; font-size: 15px; margin-top: 22px; margin-bottom: 4px; }
+  h4 { color: #444; font-size: 13px; margin: 12px 0 4px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; page-break-inside: avoid; }
+  h3, h4 { page-break-after: avoid; }
+  th, td { border: 1px solid #999; padding: 6px 9px; text-align: left; vertical-align: top; }
+  th { background: #003366; color: #fff; }
+  tr:nth-child(even) { background: #f3f5f8; }
+  .meta td:first-child { width: 200px; font-weight: bold; background: #eef2f7; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 5px;
+        overflow-x: auto; font-family: 'Consolas', monospace; font-size: 10.5px; white-space: pre-wrap; word-break: break-all;
+        page-break-inside: avoid; }
+  code { background: #ececec; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; font-size: 11px; }
+  .crit { color: #b30000; font-weight: bold; }
+  .sev-crit { background: #b30000; color: #fff; font-weight: bold; text-align: center; }
+  .sev-high { background: #e8620c; color: #fff; font-weight: bold; text-align: center; }
+  .sev-med  { background: #e0a800; color: #1a1a1a; font-weight: bold; text-align: center; }
+  .sev-low  { background: #e0e000; color: #1a1a1a; font-weight: bold; text-align: center; }
+  .cover { text-align: center; padding-top: 140px; page-break-after: always; }
+  .cover .sub { color: #555; font-size: 16px; margin-top: 4px; }
+  .cover .box { margin-top: 80px; display: inline-block; text-align: left; border: 1px solid #ccc; padding: 18px 34px; border-radius: 6px; background:#f8f9fb; }
+  .pagebreak { page-break-before: always; }
+  .finding { border: 1px solid #ccc; border-radius: 6px; padding: 0 16px 12px 16px; margin: 16px 0; }
+  .finding-head { margin: 0 -16px 10px -16px; padding: 8px 16px; color: #fff; border-radius: 6px 6px 0 0; font-weight: bold; font-size: 15px; }
+  .hl { background: #ffe27a; color: #1a1a1a; padding: 1px 4px; border-radius: 3px; font-weight: bold; }
+  .insight { background: #fff3cd; border-left: 5px solid #e8620c; padding: 10px 16px; margin: 12px 0; border-radius: 4px; }
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  .footer { margin-top: 30px; font-size: 10px; color: #888; border-top: 1px solid #ccc; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <h1>LAPORAN AUDIT KEAMANAN<br>APLIKASI WEB</h1>
+  <p class="sub">Vulnerability Assessment terhadap bWAPP (Buggy Web Application)</p>
+  <div class="box">
+    <table style="border:none;">
+      <tr style="background:none;"><td style="border:none; font-weight:bold;">Aplikasi Target</td><td style="border:none;">bWAPP (OWASP)</td></tr>
+      <tr style="background:none;"><td style="border:none; font-weight:bold;">Lingkungan</td><td style="border:none;">Docker, http://localhost:8080</td></tr>
+      <tr style="background:none;"><td style="border:none; font-weight:bold;">Mata Kuliah</td><td style="border:none;">IT Audit</td></tr>
+      <tr style="background:none;"><td style="border:none; font-weight:bold;">Auditor</td><td style="border:none;">Ravi Arnan Irianto</td></tr>
+      <tr style="background:none;"><td style="border:none; font-weight:bold;">Tanggal</td><td style="border:none;">24 Mei 2026</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ================= EXEC SUMMARY ================= -->
+<h2>1. Ringkasan Eksekutif (Executive Summary)</h2>
+<p>Audit keamanan ini dilakukan terhadap aplikasi bWAPP, sebuah aplikasi web yang sengaja dibuat rentan untuk tujuan edukasi, sebagai studi kasus mata kuliah IT Audit. Tujuan audit adalah mengidentifikasi, memverifikasi, dan memetakan kerentanan keamanan aplikasi web terhadap kerangka kerja standar industri OWASP Top 10 2021.</p>
+<p>Pengujian dilakukan menggunakan kombinasi pemindaian otomatis (Nikto, OWASP ZAP), eksploitasi terarah (SQLMap), dan pengujian manual. Hasil audit menemukan <b>4 area temuan utama</b> dengan tingkat keparahan mulai dari Medium hingga Critical. Dua di antaranya tergolong <span class="crit">Critical</span> dan memungkinkan penyerang mengambil alih data sensitif tanpa autentikasi.</p>
+<p>Temuan paling kritikal adalah kebocoran kredensial melalui file konfigurasi yang terekspos serta kerentanan SQL Injection yang memungkinkan pencurian seluruh isi tabel pengguna, termasuk akun administrator. Aplikasi juga rentan terhadap Cross-Site Scripting dan memiliki sejumlah kesalahan konfigurasi keamanan (security misconfiguration).</p>
+
+<h3>Distribusi Tingkat Keparahan</h3>
+<table>
+  <tr><th>Tingkat Keparahan</th><th>Jumlah Temuan</th></tr>
+  <tr><td class="sev-crit">Critical</td><td>2</td></tr>
+  <tr><td class="sev-high">High</td><td>1</td></tr>
+  <tr><td class="sev-med">Medium</td><td>1 (kelompok misconfiguration)</td></tr>
+</table>
+
+<h2>2. Ruang Lingkup dan Tujuan (Scope &amp; Objectives)</h2>
+<table class="meta">
+  <tr><td>Target Audit</td><td>Aplikasi web bWAPP v2.2 pada http://localhost:8080</td></tr>
+  <tr><td>Jenis Pengujian</td><td>Black-box dan grey-box (dengan kredensial uji bee/bug)</td></tr>
+  <tr><td>Security Level</td><td>Low (security_level=0)</td></tr>
+  <tr><td>Termasuk dalam Scope</td><td>Aplikasi web layer (injection, XSS, info disclosure, misconfiguration, header keamanan)</td></tr>
+  <tr><td>Di Luar Scope</td><td>Audit OS/host, denial-of-service, social engineering, serangan terhadap sistem nyata</td></tr>
+  <tr><td>Sifat Lingkungan</td><td>Lab terisolasi (localhost), aplikasi sengaja dibuat rentan untuk edukasi</td></tr>
+</table>
+
+<h2>3. Metodologi</h2>
+<p>Audit mengikuti 5 tahap kerja yang umum digunakan dalam vulnerability assessment:</p>
+<ol>
+  <li><b>Setup Environment.</b> Deploy bWAPP via Docker dan verifikasi akses.</li>
+  <li><b>Penentuan Scope.</b> Memilih kategori kerentanan dan menetapkan tingkat kesulitan.</li>
+  <li><b>Pengujian.</b> Pemindaian otomatis, eksploitasi, dan verifikasi manual setiap temuan.</li>
+  <li><b>Analisis dan Mapping.</b> Memetakan temuan ke OWASP Top 10 2021 dan menetapkan severity.</li>
+  <li><b>Pelaporan.</b> Menyusun temuan, bukti, dan rekomendasi remediasi.</li>
+</ol>
+<h3>Tools yang Digunakan</h3>
+<table>
+  <tr><th>Tool</th><th>Versi</th><th>Fungsi</th></tr>
+  <tr><td>Nikto</td><td>2.1.5</td><td>Web server scanner (information disclosure, misconfiguration)</td></tr>
+  <tr><td>SQLMap</td><td>1.10.2.6</td><td>Deteksi dan eksploitasi SQL Injection otomatis</td></tr>
+  <tr><td>OWASP ZAP</td><td>2.17.0</td><td>Dynamic Application Security Testing (DAST)</td></tr>
+  <tr><td>Manual testing</td><td>curl, browser</td><td>Verifikasi manual XSS dan kebocoran data</td></tr>
+</table>
+
+<h2>4. Ringkasan Temuan</h2>
+<table>
+  <tr><th>ID</th><th>Temuan</th><th>Severity</th><th>OWASP 2021</th><th>Tool</th></tr>
+  <tr><td>F-01</td><td>Sensitive Data Exposure (kredensial bocor)</td><td class="sev-crit">Critical</td><td>A01, A02, A05</td><td>Nikto + manual</td></tr>
+  <tr><td>F-02</td><td>SQL Injection</td><td class="sev-crit">Critical</td><td>A03, A02</td><td>SQLMap</td></tr>
+  <tr><td>F-03</td><td>Cross-Site Scripting (Reflected + Stored)</td><td class="sev-high">High</td><td>A03</td><td>Manual</td></tr>
+  <tr><td>F-04</td><td>Security Misconfiguration &amp; Missing Headers</td><td class="sev-med">Medium</td><td>A05, A01</td><td>OWASP ZAP</td></tr>
+</table>
+
+<!-- ================= DETAILED FINDINGS ================= -->
+<h2 class="pagebreak">5. Temuan Terperinci</h2>
+
+<!-- F-01 -->
+<div class="finding">
+  <div class="finding-head" style="background:#b30000;">F-01 &nbsp; Sensitive Data Exposure (CRITICAL)</div>
+  <h4>Deskripsi</h4>
+  <p>File konfigurasi dan file backup yang berisi kredensial dapat diakses publik tanpa autentikasi. Directory indexing yang aktif memperparah kondisi ini dengan menampilkan daftar isi folder sensitif seperti <code>/passwords/</code>.</p>
+  <h4>Bukti</h4>
+  <p>Akses langsung ke <code>http://localhost:8080/config.inc</code> menampilkan kredensial database:</p>
+  <pre>$server = "localhost";
+$username = "bwapp";
+$password = "bwApped";
+$database = "bWAPP";</pre>
+  <p>Folder <code>/passwords/</code> menampilkan daftar file dan isinya dapat diunduh:</p>
+  <table>
+    <tr><th>File</th><th>Kredensial Terekspos</th></tr>
+    <tr><td>heroes.xml</td><td>6 akun user + password plaintext (neo/trinity, alice/loveZombies, thor/Asgard, dll)</td></tr>
+    <tr><td>web.config.bak</td><td>Connection string ASP.NET: wolverine / Log@N</td></tr>
+    <tr><td>wp-config.bak</td><td>WordPress DB: thor / Asgard</td></tr>
+  </table>
+  <h4>Penilaian Risiko</h4>
+  <table>
+    <tr><td class="meta" style="font-weight:bold; background:#eef2f7; width:160px;">Severity</td><td class="crit">Critical (CVSS estimasi 9.1)</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">OWASP 2021</td><td>A01 Broken Access Control, A02 Cryptographic Failures, A05 Security Misconfiguration</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">Impact</td><td>Penyerang memperoleh kredensial database tanpa eksploitasi apa pun, berpotensi full database compromise.</td></tr>
+  </table>
+  <h4>Rekomendasi</h4>
+  <ul>
+    <li>Matikan directory indexing (<code>Options -Indexes</code> pada Apache).</li>
+    <li>Hapus seluruh file backup (.bak, .inc, .old) dari web root.</li>
+    <li>Pindahkan file konfigurasi ke luar document root atau blokir aksesnya.</li>
+    <li>Jangan menyimpan password dalam bentuk plaintext, gunakan hashing yang kuat.</li>
+    <li>Hapus file installer (install.php) setelah instalasi selesai.</li>
+  </ul>
+</div>
+
+<!-- F-02 -->
+<div class="finding">
+  <div class="finding-head" style="background:#b30000;">F-02 &nbsp; SQL Injection (CRITICAL)</div>
+  <h4>Deskripsi</h4>
+  <p>Parameter <code>title</code> pada modul SQL Injection (GET/Search) tidak melakukan sanitasi input, sehingga input pengguna dieksekusi langsung sebagai bagian dari query SQL.</p>
+  <h4>Bukti</h4>
+  <p>SQLMap mengonfirmasi parameter <code>title</code> rentan terhadap 4 teknik injeksi (boolean-based blind, error-based, time-based blind, UNION query) dan berhasil mengekstrak tabel <code>bWAPP.users</code>:</p>
+  <pre>Database: bWAPP, Table: users [2 entri]
+id | login  | admin | password (SHA1 unsalted)
+1  | A.I.M. |  1    | 6885858486f31043e5839c735d99457f045affd0
+2  | bee    |  1    | 6885858486f31043e5839c735d99457f045affd0
+
+Verifikasi: echo -n "bug" | sha1sum  =>  6885858486f31043e5839c735d99457f045affd0
+Password plaintext kedua akun admin berhasil dipulihkan: "bug"</pre>
+  <h4>Penilaian Risiko</h4>
+  <table>
+    <tr><td style="font-weight:bold; background:#eef2f7; width:160px;">Severity</td><td class="crit">Critical (CVSS estimasi 9.8)</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">OWASP 2021</td><td>A03 Injection, A02 Cryptographic Failures</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">Impact</td><td>Akses baca penuh ke database, pencurian seluruh kredensial termasuk akun admin. Hash lemah (unsalted SHA1) mudah dipecahkan.</td></tr>
+  </table>
+  <h4>Rekomendasi</h4>
+  <ul>
+    <li>Gunakan prepared statements atau parameterized queries (PDO/MySQLi).</li>
+    <li>Terapkan input validation dengan whitelist karakter.</li>
+    <li>Ganti penyimpanan password ke bcrypt atau argon2 dengan salt unik.</li>
+    <li>Terapkan prinsip least privilege pada akun database aplikasi.</li>
+  </ul>
+</div>
+
+<!-- F-03 -->
+<div class="finding">
+  <div class="finding-head" style="background:#e8620c;">F-03 &nbsp; Cross-Site Scripting / XSS (HIGH)</div>
+  <h4>Deskripsi</h4>
+  <p>Aplikasi tidak melakukan output encoding maupun sanitasi input, sehingga script dari pengguna dieksekusi oleh browser. Ditemukan dua varian: Reflected (GET) dan Stored (Blog).</p>
+  <h4>Bukti</h4>
+  <p>Reflected XSS pada <code>xss_get.php</code> (parameter <code>firstname</code>), payload dipantulkan tanpa encoding:</p>
+  <pre>Welcome <span class="hl">&lt;script&gt;alert('XSS-bWAPP')&lt;/script&gt;</span> test</pre>
+  <p>Stored XSS pada <code>xss_stored_1.php</code>, payload tersimpan permanen di database dan dirender ke setiap pengunjung (telah dibersihkan setelah verifikasi):</p>
+  <pre>&lt;td&gt;<span class="hl">&lt;script&gt;alert('Stored-XSS-by-Audit')&lt;/script&gt;</span>&lt;/td&gt;</pre>
+  <h4>Penilaian Risiko</h4>
+  <table>
+    <tr><td style="font-weight:bold; background:#eef2f7; width:160px;">Severity</td><td class="crit">High (CVSS estimasi: Reflected 6.1, Stored 7.4)</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">OWASP 2021</td><td>A03 Injection (Cross-Site Scripting)</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">Impact</td><td>Pencurian session cookie, session hijacking, defacement, phishing. Diperparah oleh cookie tanpa flag HttpOnly.</td></tr>
+  </table>
+  <h4>Rekomendasi</h4>
+  <ul>
+    <li>Terapkan output encoding sesuai konteks (mis. htmlspecialchars di PHP).</li>
+    <li>Lakukan input validation di sisi server.</li>
+    <li>Pasang Content Security Policy (CSP).</li>
+    <li>Set flag HttpOnly dan Secure pada cookie session.</li>
+  </ul>
+</div>
+
+<!-- F-04 -->
+<div class="finding">
+  <div class="finding-head" style="background:#e0a800; color:#1a1a1a;">F-04 &nbsp; Security Misconfiguration &amp; Missing Headers (MEDIUM)</div>
+  <h4>Deskripsi</h4>
+  <p>Pemindaian OWASP ZAP menemukan sejumlah kesalahan konfigurasi keamanan dan header keamanan yang hilang. Total 5 temuan Medium dan 6 temuan Low.</p>
+  <h4>Bukti (Temuan Medium dari ZAP)</h4>
+  <table>
+    <tr><th>Temuan</th><th>CWE</th><th>OWASP 2021</th></tr>
+    <tr><td>Absence of Anti-CSRF Tokens</td><td>352</td><td>A01 Broken Access Control</td></tr>
+    <tr><td>Application Error Disclosure</td><td>550</td><td>A05 Security Misconfiguration</td></tr>
+    <tr><td>Content Security Policy (CSP) Header Not Set</td><td>693</td><td>A05 Security Misconfiguration</td></tr>
+    <tr><td>Directory Browsing</td><td>548</td><td>A05 Security Misconfiguration</td></tr>
+    <tr><td>Missing Anti-clickjacking Header</td><td>1021</td><td>A05 Security Misconfiguration</td></tr>
+  </table>
+  <h4>Temuan Low Pendukung</h4>
+  <p>Cookie tanpa HttpOnly, Cookie tanpa SameSite, banner versi server bocor (Apache/2.4.7), header X-Powered-By bocor (PHP/5.5.9, versi End-of-Life), dan X-Content-Type-Options tidak diset.</p>
+  <h4>Rekomendasi</h4>
+  <ul>
+    <li>Tambahkan token Anti-CSRF unik pada setiap form yang mengubah state.</li>
+    <li>Set header keamanan: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options: nosniff.</li>
+    <li>Set flag HttpOnly, Secure, dan SameSite pada cookie session.</li>
+    <li>Gunakan custom error page untuk menyembunyikan detail error.</li>
+    <li>Sembunyikan banner versi server (ServerTokens Prod, expose_php Off).</li>
+    <li>Update komponen usang (PHP 5.5.9 dan Apache 2.4.7 sudah End-of-Life).</li>
+  </ul>
+</div>
+
+<!-- ================= INSIGHT ================= -->
+<h2>6. Catatan Metodologi: Keterbatasan Automated Scanner</h2>
+<div class="insight">
+OWASP ZAP melaporkan <b>0 temuan High</b>, padahal pengujian manual dan SQLMap membuktikan adanya SQL Injection (Critical) dan Stored XSS (High) pada aplikasi yang sama.
+</div>
+<p>Hal ini terjadi karena ZAP hanya meng-crawl halaman permukaan dan tidak masuk ke modul kerentanan yang berada di balik autentikasi serta tidak ter-link otomatis. Temuan ini menggarisbawahi bahwa automated DAST scanner memiliki blind spot. Audit yang baik harus mengombinasikan pemindaian otomatis dengan pengujian manual dan tools terarah.</p>
+<h3>Cross-Validation</h3>
+<p>Beberapa temuan dikonfirmasi oleh dua tool berbeda (Nikto dan ZAP), yang memperkuat validitasnya: Directory Browsing, kebocoran banner versi server, Missing X-Frame-Options, dan Cookie tanpa HttpOnly.</p>
+
+<!-- ================= CONCLUSION ================= -->
+<h2>7. Kesimpulan</h2>
+<p>Aplikasi bWAPP terbukti memiliki kerentanan keamanan yang serius dan beragam, mencakup mayoritas kategori OWASP Top 10 2021. Dua temuan Critical (Sensitive Data Exposure dan SQL Injection) memungkinkan kompromi data secara langsung dan harus menjadi prioritas remediasi tertinggi. Kombinasi metode pengujian (otomatis, eksploitasi, dan manual) terbukti penting karena tidak ada satu tool pun yang menemukan seluruh kerentanan.</p>
+<p>Sebagai aplikasi yang sengaja dibuat rentan, bWAPP merupakan media latihan yang efektif untuk memahami proses audit keamanan aplikasi web mulai dari identifikasi, eksploitasi, hingga penyusunan rekomendasi remediasi yang selaras dengan standar industri.</p>
+
+<h2>8. Lampiran</h2>
+<h4>Daftar Bukti (Evidence)</h4>
+<table>
+  <tr><th>File</th><th>Keterangan</th></tr>
+  <tr><td>nikto_scan.pdf</td><td>Output pemindaian Nikto (38 temuan)</td></tr>
+  <tr><td>sqlmap_scan.pdf</td><td>Bukti dan analisis SQL Injection</td></tr>
+  <tr><td>xss_scan.pdf</td><td>Bukti XSS Reflected dan Stored</td></tr>
+  <tr><td>2026-05-24-ZAP-Report-.pdf</td><td>Report mentah OWASP ZAP</td></tr>
+  <tr><td>zap_analysis.pdf</td><td>Analisis terstruktur hasil ZAP</td></tr>
+  <tr><td>sqlmap_output/</td><td>Output mentah SQLMap (CSV, log, session)</td></tr>
+</table>
+<h4>Referensi</h4>
+<ul>
+  <li>OWASP Top 10 2021 - https://owasp.org/Top10/</li>
+  <li>OWASP bWAPP Project - http://www.itsecgames.com</li>
+  <li>OWASP Cheat Sheet Series - https://cheatsheetseries.owasp.org</li>
+</ul>
+
+<div class="footer">
+  Laporan ini disusun untuk keperluan akademik mata kuliah IT Audit. Seluruh pengujian dilakukan pada lingkungan lab terisolasi (localhost) terhadap aplikasi yang sengaja dibuat rentan untuk tujuan edukasi. Teknik-teknik dalam laporan ini tidak boleh digunakan terhadap sistem mana pun tanpa izin tertulis.
+</div>
+
+</body>
+</html>

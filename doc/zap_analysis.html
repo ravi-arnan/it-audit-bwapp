@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>OWASP ZAP Analysis - bWAPP</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; margin: 40px; line-height: 1.5; font-size: 13px; }
+  h1 { color: #003366; border-bottom: 3px solid #003366; padding-bottom: 8px; font-size: 22px; }
+  h2 { color: #003366; margin-top: 28px; border-left: 5px solid #003366; padding-left: 10px; font-size: 16px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #003366; color: #fff; }
+  tr:nth-child(even) { background: #f2f2f2; }
+  .meta td:first-child { width: 220px; font-weight: bold; background: #eef2f7; }
+  .crit { color: #b30000; font-weight: bold; }
+  .med { color: #b35900; font-weight: bold; }
+  .low { color: #8a8a00; font-weight: bold; }
+  .badge { display: inline-block; background: #003366; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+  code { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; }
+  .insight { background: #fff3cd; border-left: 5px solid #b35900; padding: 12px 16px; margin: 14px 0; border-radius: 4px; }
+  .footer { margin-top: 40px; font-size: 10px; color: #888; border-top: 1px solid #ccc; padding-top: 8px; }
+  .cnt { background:#003366; color:#fff; }
+  .cm { background:#ff8c00; color:#fff; }
+  .cl { background:#e0e000; }
+  .ci { background:#1e60c0; color:#fff; }
+</style>
+</head>
+<body>
+
+<h1>Analisis Hasil OWASP ZAP — Full Scan</h1>
+<p><span class="badge">DAST AUTOMATED SCAN</span> &nbsp; Target: OWASP/bWAPP (Buggy Web Application) — Lab IT Audit</p>
+
+<h2>1. Informasi Pengujian</h2>
+<table class="meta">
+  <tr><td>Tanggal Pengujian</td><td>24 Mei 2026, 22:52</td></tr>
+  <tr><td>Tool</td><td>OWASP ZAP v2.17.0 (by Checkmarx)</td></tr>
+  <tr><td>Target</td><td><code>http://localhost:8080</code></td></tr>
+  <tr><td>Jenis Scan</td><td>Full Scan (Spider + Active Scan)</td></tr>
+  <tr><td>Scan Policy</td><td>Default Policy</td></tr>
+  <tr><td>Total Endpoint</td><td>64 endpoint terdeteksi</td></tr>
+</table>
+
+<h2>2. Ringkasan Temuan (Summary of Alerts)</h2>
+<table>
+  <tr><th>Risk Level</th><th>Jumlah Alert</th></tr>
+  <tr><td class="cnt">High</td><td>0</td></tr>
+  <tr><td class="cm">Medium</td><td>5</td></tr>
+  <tr><td class="cl">Low</td><td>6</td></tr>
+  <tr><td class="ci">Informational</td><td>9</td></tr>
+</table>
+
+<h2>3. Temuan Medium (5)</h2>
+<table>
+  <tr><th>Temuan</th><th>Instances</th><th>CWE</th><th>OWASP 2021</th></tr>
+  <tr><td>Absence of Anti-CSRF Tokens</td><td>5</td><td>352</td><td>A01 Broken Access Control</td></tr>
+  <tr><td>Application Error Disclosure</td><td>6</td><td>550</td><td>A05 Security Misconfiguration</td></tr>
+  <tr><td>Content Security Policy (CSP) Header Not Set</td><td>Systemic</td><td>693</td><td>A05 Security Misconfiguration</td></tr>
+  <tr><td>Directory Browsing</td><td>Systemic</td><td>548</td><td>A05 Security Misconfiguration</td></tr>
+  <tr><td>Missing Anti-clickjacking Header</td><td>Systemic</td><td>1021</td><td>A05 Security Misconfiguration</td></tr>
+</table>
+
+<h2>4. Temuan Low (6)</h2>
+<table>
+  <tr><th>Temuan</th><th>Evidence / Catatan</th></tr>
+  <tr><td>Cookie No HttpOnly Flag</td><td>Set-Cookie: PHPSESSID (rentan dicuri via XSS)</td></tr>
+  <tr><td>Cookie without SameSite Attribute</td><td>PHPSESSID (mendukung serangan CSRF)</td></tr>
+  <tr><td>In Page Banner Information Leak</td><td>Apache/2.4.7 di sitemap.xml</td></tr>
+  <tr><td>Server Leaks Information via "X-Powered-By"</td><td>X-Powered-By: PHP/5.5.9-1ubuntu4.14 (versi EOL)</td></tr>
+  <tr><td>Server Leaks Version via "Server" header</td><td>Apache/2.4.7 (Ubuntu)</td></tr>
+  <tr><td>X-Content-Type-Options Header Missing</td><td>Tidak ada 'nosniff' (rentan MIME-sniffing)</td></tr>
+</table>
+
+<h2>5. Temuan Informational (9)</h2>
+<p>Authentication Request Identified &middot; GET for POST &middot; Session Management Response Identified &middot; Tech Detected (Apache HTTP Server, PHP, Ubuntu, bun) &middot; User Agent Fuzzer &middot; <b>User Controllable HTML Element Attribute (Potential XSS)</b> &mdash; ZAP menandai input pengguna yang masuk ke atribut HTML, indikasi awal potensi XSS yang perlu verifikasi manual.</p>
+
+<h2>6. Insight Kunci: Keterbatasan Automated Scanner</h2>
+<div class="insight">
+<b>ZAP melaporkan 0 temuan High</b> — padahal pengujian manual + SQLMap membuktikan adanya <span class="crit">SQL Injection (Critical)</span> dan <span class="crit">Stored XSS (High)</span> pada aplikasi yang sama.
+</div>
+<p>Penyebab: ZAP hanya meng-crawl halaman permukaan (<code>login.php</code>, <code>portal.php</code>, <code>admin/</code>, <code>documents/</code>, <code>passwords/</code>) namun <b>tidak masuk ke modul vulnerability</b> (<code>sqli_1.php</code>, <code>xss_get.php</code>, <code>xss_stored_1.php</code>) karena:</p>
+<ol>
+  <li>Scan tidak mempertahankan sesi login terautentikasi + <code>security_level=0</code> di dalam aplikasi.</li>
+  <li>Spider tidak menemukan URL modul bWAPP secara otomatis (perlu navigasi/seeding manual terlebih dahulu).</li>
+</ol>
+<p><b>Pelajaran audit:</b> Automated DAST scanner memiliki <i>blind spot</i>. Tanpa konfigurasi autentikasi yang benar, scanner dapat melewatkan kerentanan paling kritikal. Audit yang baik <b>selalu mengombinasikan</b> automated scanning dengan manual testing dan tools terarah (mis. SQLMap).</p>
+
+<h2>7. Cross-Validation dengan Nikto</h2>
+<p>ZAP mengkonfirmasi ulang beberapa temuan Nikto secara independen, memperkuat validitas laporan:</p>
+<table>
+  <tr><th>Temuan</th><th>Nikto</th><th>ZAP</th></tr>
+  <tr><td>Directory Browsing / Indexing</td><td>Terdeteksi</td><td>Terdeteksi (Medium)</td></tr>
+  <tr><td>X-Powered-By / Server version leak</td><td>Terdeteksi</td><td>Terdeteksi (Low)</td></tr>
+  <tr><td>Missing X-Frame-Options (clickjacking)</td><td>Terdeteksi</td><td>Terdeteksi (Medium)</td></tr>
+  <tr><td>Cookie tanpa HttpOnly</td><td>Terdeteksi</td><td>Terdeteksi (Low)</td></tr>
+</table>
+<p>Temuan <b>baru</b> dari ZAP (tidak ada di Nikto): Absence of Anti-CSRF Tokens, CSP Header Not Set, Cookie without SameSite, X-Content-Type-Options missing.</p>
+
+<h2>8. Rekomendasi Remediasi (Konsolidasi)</h2>
+<ol>
+  <li>Tambahkan token <b>Anti-CSRF</b> unik pada setiap form yang mengubah state.</li>
+  <li>Set security headers: <b>Content-Security-Policy</b>, <b>X-Frame-Options</b>, <b>X-Content-Type-Options: nosniff</b>.</li>
+  <li>Set flag <b>HttpOnly</b>, <b>Secure</b>, dan <b>SameSite</b> pada cookie session.</li>
+  <li>Matikan <b>directory browsing</b> (<code>Options -Indexes</code>) dan custom error page (sembunyikan error detail).</li>
+  <li>Sembunyikan banner versi server (<code>ServerTokens Prod</code>, <code>ServerSignature Off</code>, <code>expose_php = Off</code>).</li>
+  <li>Update komponen usang: PHP 5.5.9 dan Apache 2.4.7 sudah End-of-Life.</li>
+</ol>
+
+<div class="footer">
+  Dokumen ini dihasilkan untuk keperluan mata kuliah IT Audit. Pengujian dilakukan pada lingkungan lab terisolasi (localhost).
+  Detail lengkap setiap instance tersedia pada report mentah ZAP (2026-05-24-ZAP-Report-.pdf).
+</div>
+
+</body>
+</html>
