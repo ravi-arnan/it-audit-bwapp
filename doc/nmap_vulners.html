@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Nmap Vulners Scan Evidence - bWAPP</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; margin: 40px; line-height: 1.5; font-size: 13px; }
+  h1 { color: #b30000; border-bottom: 3px solid #b30000; padding-bottom: 8px; font-size: 22px; }
+  h2 { color: #003366; margin-top: 28px; border-left: 5px solid #003366; padding-left: 10px; font-size: 16px; }
+  h3 { color: #b35900; font-size: 14px; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #003366; color: #fff; }
+  tr:nth-child(even) { background: #f2f2f2; }
+  .meta td:first-child { width: 220px; font-weight: bold; background: #eef2f7; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 14px; border-radius: 5px;
+        overflow-x: auto; font-family: 'Consolas', monospace; font-size: 11px; white-space: pre-wrap; word-break: break-all; }
+  .crit { color: #b30000; font-weight: bold; }
+  .high { color: #cc3300; font-weight: bold; }
+  .med { color: #b35900; font-weight: bold; }
+  .badge { display: inline-block; background: #b30000; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+  code { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; }
+  .footer { margin-top: 40px; font-size: 10px; color: #888; border-top: 1px solid #ccc; padding-top: 8px; }
+  .note { background: #fff3cd; border-left: 4px solid #b35900; padding: 10px 14px; margin: 14px 0; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Nmap Vulners Scan Evidence (Outdated Server Components)</h1>
+<p><span class="badge">CRITICAL</span> &nbsp; Target: OWASP/bWAPP (Buggy Web Application) — Lab IT Audit</p>
+
+<h2>1. Informasi Pengujian</h2>
+<table class="meta">
+  <tr><td>Tanggal Pengujian</td><td>17 Juni 2026</td></tr>
+  <tr><td>Tool</td><td>Nmap 7.94SVN + skrip NSE <code>vulners</code> dan <code>http-server-header</code></td></tr>
+  <tr><td>Metode</td><td>Deteksi versi layanan (<code>-sV</code>), lalu pencocokan CPE ke basis data kerentanan vulners.com</td></tr>
+  <tr><td>Target</td><td><code>http://localhost:8080/</code> (port 8080/tcp)</td></tr>
+  <tr><td>Perintah</td><td><code>nmap -sV --script vulners,http-server-header -p 8080 localhost</code></td></tr>
+</table>
+
+<h2>2. Komponen Terdeteksi</h2>
+<table>
+  <tr><th>Layanan</th><th>Versi</th><th>CPE</th><th>Sumber</th></tr>
+  <tr><td>HTTP Server</td><td>Apache httpd 2.4.7 (Ubuntu)</td><td><code>cpe:/a:apache:http_server:2.4.7</code></td><td>Deteksi versi nmap</td></tr>
+  <tr><td>Interpreter</td><td>PHP 5.5.9-1ubuntu4.14</td><td><code>cpe:/a:php:php:5.5.9</code></td><td>Header <code>X-Powered-By</code></td></tr>
+</table>
+<p>Apache 2.4.7 (rilis 2014) dan PHP 5.5.9 (PHP 5.5 mencapai End-of-Life pada Juli 2016) keduanya sudah jauh melewati masa dukungan keamanan.</p>
+
+<h2>3. Ringkasan Kerentanan (Apache httpd 2.4.7)</h2>
+<p>Skrip <code>vulners</code> mencocokkan versi Apache dengan <b>106 CVE unik</b>. Distribusi tingkat keparahan (berdasarkan skor CVSS yang dilaporkan vulners):</p>
+<table>
+  <tr><th>Tingkat</th><th>Rentang CVSS</th><th>Jumlah CVE</th></tr>
+  <tr><td class="crit">Critical</td><td>9.0 - 10.0</td><td>24</td></tr>
+  <tr><td class="high">High</td><td>7.0 - 8.9</td><td>42</td></tr>
+  <tr><td class="med">Medium</td><td>4.0 - 6.9</td><td>40</td></tr>
+</table>
+<p>Selain CVE, scan menandai <b>52 entri ber-label <code>*EXPLOIT*</code></b> (exploit publik tersedia, mis. ExploitDB, PacketStorm, Metasploit/Seebug), termasuk satu entri berskor 10.0.</p>
+
+<h3>Contoh CVE Critical (CVSS 9.8) pada Apache 2.4.7</h3>
+<table>
+  <tr><th>CVE</th><th>CVSS</th><th>Keterangan singkat</th></tr>
+  <tr><td>CVE-2024-38476</td><td class="crit">9.8</td><td>SSRF/eksekusi via backend tak tepercaya (mod_proxy)</td></tr>
+  <tr><td>CVE-2023-25690</td><td class="crit">9.8</td><td>HTTP request smuggling via mod_proxy + RewriteRule</td></tr>
+  <tr><td>CVE-2022-31813</td><td class="crit">9.8</td><td>Penghapusan header X-Forwarded-* (bypass otorisasi)</td></tr>
+  <tr><td>CVE-2022-22720</td><td class="crit">9.8</td><td>HTTP request smuggling (penanganan koneksi tidak valid)</td></tr>
+  <tr><td>CVE-2021-44790</td><td class="crit">9.8</td><td>Buffer overflow pada mod_lua (multipart parsing)</td></tr>
+  <tr><td>CVE-2021-39275</td><td class="crit">9.8</td><td>Out-of-bounds write pada ap_escape_quotes</td></tr>
+  <tr><td>CVE-2017-7679</td><td class="crit">9.8</td><td>Buffer over-read pada mod_mime</td></tr>
+  <tr><td>CVE-2017-3169</td><td class="crit">9.8</td><td>NULL pointer dereference pada mod_ssl</td></tr>
+</table>
+<p>Daftar lengkap 106 CVE tersimpan sebagai arsip mentah di <code>doc/nmap_output/nmap_vulners.txt</code>.</p>
+
+<div class="note">
+<b>Catatan metodologi (penting untuk interpretasi):</b> Skrip <code>vulners</code> mencocokkan kerentanan <b>berdasarkan banner versi (CPE) saja</b>, bukan dengan menguji eksploitasi secara langsung. Distribusi paket Ubuntu sering melakukan <i>backport</i> tambalan keamanan tanpa menaikkan nomor versi, sehingga sebagian CVE dalam daftar mungkin sudah ditambal pada build spesifik ini. Daftar ini valid sebagai indikator <b>permukaan risiko komponen usang</b>, dan untuk konfirmasi per-CVE diperlukan verifikasi versi paket atau pengujian eksploitasi terkontrol. Sebagian entri (mis. ber-ID tahun mendatang) juga dapat berupa noise pencocokan.
+</div>
+
+<h2>4. PHP 5.5.9</h2>
+<p>PHP 5.5.9 tidak dipindai vulners sebagai layanan terpisah (terdeteksi via header, bukan port khusus), namun statusnya yang <b>End-of-Life sejak 2016</b> menjadikannya temuan A06 tersendiri. Cabang PHP 5.5 tidak lagi menerima pembaruan keamanan dan memiliki sejumlah besar CVE yang diketahui. Disarankan migrasi ke versi PHP yang masih didukung (8.x).</p>
+
+<h2>5. Penilaian Risiko</h2>
+<table>
+  <tr><th>Aspek</th><th>Keterangan</th></tr>
+  <tr><td>Severity</td><td class="crit">CRITICAL</td></tr>
+  <tr><td>OWASP Top 10 2021</td><td>A06:2021 Vulnerable and Outdated Components</td></tr>
+  <tr><td>Root Cause</td><td>Server web (Apache 2.4.7) dan interpreter (PHP 5.5.9) berjalan pada versi end-of-life tanpa pembaruan keamanan</td></tr>
+  <tr><td>Impact</td><td>Permukaan serangan luas: request smuggling, SSRF, buffer overflow, dan bypass otorisasi; banyak memiliki exploit publik</td></tr>
+  <tr><td>Keterkaitan Temuan Lain</td><td>Melengkapi temuan Nikto yang menandai versi usang, dengan pemetaan ke ID CVE konkret</td></tr>
+</table>
+
+<h2>6. Rekomendasi Remediasi</h2>
+<ol>
+  <li><b>Perbarui Apache httpd</b> ke rilis stabil terkini (cabang 2.4.x yang didukung) atau gunakan paket OS yang aktif menerima tambalan keamanan.</li>
+  <li><b>Migrasi PHP</b> dari 5.5.9 ke versi yang masih didukung (PHP 8.x).</li>
+  <li>Tegakkan <b>manajemen patch</b> dan pemindaian komponen berkala (SCA) sebagai bagian dari siklus pemeliharaan.</li>
+  <li>Sembunyikan/minimalkan <b>banner versi</b> (<code>ServerTokens Prod</code>, nonaktifkan <code>X-Powered-By</code>) untuk mengurangi kemudahan enumerasi oleh penyerang (mitigasi berlapis, bukan pengganti patch).</li>
+</ol>
+
+<div class="footer">
+  Dokumen ini dihasilkan untuk keperluan mata kuliah IT Audit. Pengujian dilakukan pada lingkungan lab terisolasi (localhost).
+  bWAPP adalah aplikasi yang sengaja dibuat rentan untuk tujuan edukasi. Jangan gunakan teknik ini pada sistem tanpa izin.
+</div>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Reproduksi scan Retire.js terhadap komponen JS bWAPP
+# 1. Unduh file JS yang disajikan target
+WORK=$(mktemp -d)
+for f in jquery-1.4.4.min.js json2.js html5.js xss_ajax_1.js; do
+  curl -s -o "$WORK/$f" "http://localhost:8080/js/$f"
+done
+# 2. Pindai folder dengan Retire.js
+npx retire --path "$WORK" --outputformat json  > retire_result.json
+npx retire --path "$WORK" --outputformat text

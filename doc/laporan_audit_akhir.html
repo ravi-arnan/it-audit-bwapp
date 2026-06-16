@@ -49,7 +49,7 @@
       <tr style="background:none;"><td style="border:none; font-weight:bold;">Lingkungan</td><td style="border:none;">Docker, http://localhost:8080</td></tr>
       <tr style="background:none;"><td style="border:none; font-weight:bold;">Mata Kuliah</td><td style="border:none;">IT Audit</td></tr>
       <tr style="background:none;"><td style="border:none; font-weight:bold;">Auditor</td><td style="border:none;">Ravi Arnan Irianto</td></tr>
-      <tr style="background:none;"><td style="border:none; font-weight:bold;">Tanggal</td><td style="border:none;">24 Mei 2026</td></tr>
+      <tr style="background:none;"><td style="border:none; font-weight:bold;">Tanggal</td><td style="border:none;">24 Mei 2026 (revisi 17 Juni 2026)</td></tr>
     </table>
   </div>
 </div>
@@ -57,14 +57,14 @@
 <!-- ================= EXEC SUMMARY ================= -->
 <h2>1. Ringkasan Eksekutif (Executive Summary)</h2>
 <p>Audit keamanan ini dilakukan terhadap aplikasi bWAPP, sebuah aplikasi web yang sengaja dibuat rentan untuk tujuan edukasi, sebagai studi kasus mata kuliah IT Audit. Tujuan audit adalah mengidentifikasi, memverifikasi, dan memetakan kerentanan keamanan aplikasi web terhadap kerangka kerja standar industri OWASP Top 10 2021.</p>
-<p>Pengujian dilakukan menggunakan kombinasi pemindaian otomatis (Nikto, OWASP ZAP), eksploitasi terarah (SQLMap), dan pengujian manual. Hasil audit menemukan <b>4 area temuan utama</b> dengan tingkat keparahan mulai dari Medium hingga Critical. Dua di antaranya tergolong <span class="crit">Critical</span> dan memungkinkan penyerang mengambil alih data sensitif tanpa autentikasi.</p>
+<p>Pengujian dilakukan menggunakan kombinasi pemindaian otomatis (Nikto, OWASP ZAP), eksploitasi terarah (SQLMap), analisis komponen usang (Retire.js, Nmap vulners), dan pengujian manual. Hasil audit menemukan <b>5 area temuan utama</b> dengan tingkat keparahan mulai dari Medium hingga Critical. Dua di antaranya tergolong <span class="crit">Critical</span> dan memungkinkan penyerang mengambil alih data sensitif tanpa autentikasi.</p>
 <p>Temuan paling kritikal adalah kebocoran kredensial melalui file konfigurasi yang terekspos serta kerentanan SQL Injection yang memungkinkan pencurian seluruh isi tabel pengguna, termasuk akun administrator. Aplikasi juga rentan terhadap Cross-Site Scripting dan memiliki sejumlah kesalahan konfigurasi keamanan (security misconfiguration).</p>
 
 <h3>Distribusi Tingkat Keparahan</h3>
 <table>
   <tr><th>Tingkat Keparahan</th><th>Jumlah Temuan</th></tr>
   <tr><td class="sev-crit">Critical</td><td>2</td></tr>
-  <tr><td class="sev-high">High</td><td>1</td></tr>
+  <tr><td class="sev-high">High</td><td>2</td></tr>
   <tr><td class="sev-med">Medium</td><td>1 (kelompok misconfiguration)</td></tr>
 </table>
 
@@ -93,6 +93,8 @@
   <tr><td>Nikto</td><td>2.1.5</td><td>Web server scanner (information disclosure, misconfiguration)</td></tr>
   <tr><td>SQLMap</td><td>1.10.2.6</td><td>Deteksi dan eksploitasi SQL Injection otomatis</td></tr>
   <tr><td>OWASP ZAP</td><td>2.17.0</td><td>Dynamic Application Security Testing (DAST)</td></tr>
+  <tr><td>Retire.js</td><td>5.4.3</td><td>Deteksi pustaka JavaScript usang/rentan (Software Composition Analysis)</td></tr>
+  <tr><td>Nmap + vulners</td><td>7.94SVN</td><td>Deteksi versi layanan dan pemetaan CVE komponen server</td></tr>
   <tr><td>Manual testing</td><td>curl, browser</td><td>Verifikasi manual XSS dan kebocoran data</td></tr>
 </table>
 
@@ -103,6 +105,7 @@
   <tr><td>F-02</td><td>SQL Injection</td><td class="sev-crit">Critical</td><td>A03, A02</td><td>SQLMap</td></tr>
   <tr><td>F-03</td><td>Cross-Site Scripting (Reflected + Stored)</td><td class="sev-high">High</td><td>A03</td><td>Manual</td></tr>
   <tr><td>F-04</td><td>Security Misconfiguration &amp; Missing Headers</td><td class="sev-med">Medium</td><td>A05, A01</td><td>OWASP ZAP</td></tr>
+  <tr><td>F-05</td><td>Vulnerable &amp; Outdated Components</td><td class="sev-high">High</td><td>A06</td><td>Retire.js + Nmap vulners</td></tr>
 </table>
 
 <!-- ================= DETAILED FINDINGS ================= -->
@@ -223,6 +226,54 @@ Password plaintext kedua akun admin berhasil dipulihkan: "bug"</pre>
   </ul>
 </div>
 
+<!-- F-05 -->
+<div class="finding">
+  <div class="finding-head" style="background:#e8620c;">F-05 &nbsp; Vulnerable &amp; Outdated Components (HIGH)</div>
+  <h4>Deskripsi</h4>
+  <p>Aplikasi berjalan di atas komponen perangkat lunak yang sudah <span class="hl">End-of-Life</span> dan tidak lagi menerima pembaruan keamanan, baik pada sisi server (Apache, PHP) maupun sisi klien (pustaka JavaScript). Pengujian dilakukan dengan Retire.js (analisis pustaka JS yang disajikan) dan Nmap dengan skrip <code>vulners</code> (pemetaan versi server ke CVE).</p>
+
+  <h4>Bukti A — Pustaka JavaScript (Retire.js)</h4>
+  <p>Berkas <code>http://localhost:8080/js/jquery-1.4.4.min.js</code> terdeteksi sebagai <b>jQuery 1.4.4</b> (rilis 2010, EOL) dengan 7 kerentanan:</p>
+  <table>
+    <tr><th>CVE / Isu</th><th>Severity</th><th>Keterangan</th></tr>
+    <tr><td>CVE-2020-11023</td><td class="sev-med">Medium</td><td>HTML <code>&lt;option&gt;</code> tak tepercaya dapat mengeksekusi kode</td></tr>
+    <tr><td>CVE-2019-11358</td><td class="sev-med">Medium</td><td>Prototype pollution pada <code>jQuery.extend</code></td></tr>
+    <tr><td>CVE-2020-7656</td><td class="sev-med">Medium</td><td>XSS via <code>.load()</code> (tag script tidak tersaring)</td></tr>
+    <tr><td>CVE-2015-9251</td><td class="sev-med">Medium</td><td>Permintaan CORS pihak ketiga dapat tereksekusi</td></tr>
+    <tr><td>CVE-2012-6708</td><td class="sev-med">Medium</td><td>Selector ditafsirkan sebagai HTML (XSS)</td></tr>
+    <tr><td>CVE-2011-4969</td><td class="sev-med">Medium</td><td>XSS melalui <code>location.hash</code></td></tr>
+    <tr><td>EOL (jQuery 1.x)</td><td class="sev-low">Low</td><td>Tidak lagi menerima pembaruan keamanan</td></tr>
+  </table>
+
+  <h4>Bukti B — Komponen Server (Nmap vulners)</h4>
+  <p>Deteksi versi menghasilkan <b>Apache httpd 2.4.7 (Ubuntu)</b> dan <b>PHP 5.5.9</b> (header <code>X-Powered-By</code>). Skrip vulners mencocokkan Apache 2.4.7 dengan <b>106 CVE unik</b> dan 52 entri ber-exploit publik:</p>
+  <pre>PORT     STATE SERVICE VERSION
+8080/tcp open  http    Apache httpd 2.4.7 ((Ubuntu))
+cpe:/a:apache:http_server:2.4.7
+
+Distribusi CVE: Critical (>=9.0) = 24 | High (7.0-8.9) = 42 | Medium (4.0-6.9) = 40
+Contoh Critical (CVSS 9.8): CVE-2024-38476, CVE-2023-25690, CVE-2022-31813,
+                            CVE-2022-22720, CVE-2021-44790, CVE-2017-7679</pre>
+  <p>PHP 5.5.9 mencapai End-of-Life pada Juli 2016 dan termasuk kategori komponen tak didukung.</p>
+
+  <h4>Penilaian Risiko</h4>
+  <table>
+    <tr><td style="font-weight:bold; background:#eef2f7; width:160px;">Severity</td><td class="crit">High</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">OWASP 2021</td><td>A06 Vulnerable and Outdated Components</td></tr>
+    <tr><td style="font-weight:bold; background:#eef2f7;">Impact</td><td>Permukaan serangan luas (XSS dan prototype pollution pada klien; request smuggling, SSRF, dan buffer overflow pada server) dengan banyak exploit publik tersedia.</td></tr>
+  </table>
+  <div class="insight">
+  <b>Catatan severity.</b> Skrip vulners mencocokkan CVE <b>berdasarkan banner versi (CPE)</b>, bukan eksploitasi terverifikasi. Distribusi Ubuntu sering mem-<i>backport</i> tambalan tanpa menaikkan nomor versi, sehingga sebagian CVE Critical pada daftar mungkin sudah ditambal. Fakta yang terkonfirmasi (komponen EOL tak didukung) bernilai High; skor Critical per-CVE bersifat potensial dan memerlukan verifikasi versi paket untuk dipastikan.
+  </div>
+  <h4>Rekomendasi</h4>
+  <ul>
+    <li>Perbarui jQuery ke versi yang didukung (minimal 3.5.0+).</li>
+    <li>Perbarui Apache httpd dan migrasikan PHP 5.5.9 ke PHP 8.x yang masih didukung.</li>
+    <li>Terapkan manajemen patch dan pemindaian komponen berkala (SCA) dalam siklus pemeliharaan.</li>
+    <li>Nonaktifkan directory listing pada folder aset dan minimalkan banner versi sebagai mitigasi berlapis.</li>
+  </ul>
+</div>
+
 <!-- ================= INSIGHT ================= -->
 <h2>6. Catatan Metodologi: Keterbatasan Automated Scanner</h2>
 <div class="insight">
@@ -234,7 +285,7 @@ OWASP ZAP melaporkan <b>0 temuan High</b>, padahal pengujian manual dan SQLMap m
 
 <!-- ================= CONCLUSION ================= -->
 <h2>7. Kesimpulan</h2>
-<p>Aplikasi bWAPP terbukti memiliki kerentanan keamanan yang serius dan beragam, mencakup mayoritas kategori OWASP Top 10 2021. Dua temuan Critical (Sensitive Data Exposure dan SQL Injection) memungkinkan kompromi data secara langsung dan harus menjadi prioritas remediasi tertinggi. Kombinasi metode pengujian (otomatis, eksploitasi, dan manual) terbukti penting karena tidak ada satu tool pun yang menemukan seluruh kerentanan.</p>
+<p>Aplikasi bWAPP terbukti memiliki kerentanan keamanan yang serius dan beragam, mencakup mayoritas kategori OWASP Top 10 2021. Dua temuan Critical (Sensitive Data Exposure dan SQL Injection) memungkinkan kompromi data secara langsung dan harus menjadi prioritas remediasi tertinggi. Audit juga menemukan penggunaan komponen usang/End-of-Life (A06) pada lapisan server maupun klien yang memperluas permukaan serangan. Kombinasi metode pengujian (otomatis, eksploitasi, analisis komponen, dan manual) terbukti penting karena tidak ada satu tool pun yang menemukan seluruh kerentanan.</p>
 <p>Sebagai aplikasi yang sengaja dibuat rentan, bWAPP merupakan media latihan yang efektif untuk memahami proses audit keamanan aplikasi web mulai dari identifikasi, eksploitasi, hingga penyusunan rekomendasi remediasi yang selaras dengan standar industri.</p>
 
 <h2>8. Lampiran</h2>
@@ -246,7 +297,11 @@ OWASP ZAP melaporkan <b>0 temuan High</b>, padahal pengujian manual dan SQLMap m
   <tr><td>xss_scan.pdf</td><td>Bukti XSS Reflected dan Stored</td></tr>
   <tr><td>2026-05-24-ZAP-Report-.pdf</td><td>Report mentah OWASP ZAP</td></tr>
   <tr><td>zap_analysis.pdf</td><td>Analisis terstruktur hasil ZAP</td></tr>
+  <tr><td>retire_scan.pdf</td><td>Bukti pustaka JS usang (jQuery 1.4.4) - Retire.js</td></tr>
+  <tr><td>nmap_vulners.pdf</td><td>Bukti CVE komponen server (Apache 2.4.7) - Nmap vulners</td></tr>
   <tr><td>sqlmap_output/</td><td>Output mentah SQLMap (CSV, log, session)</td></tr>
+  <tr><td>retire_output/</td><td>Output mentah Retire.js (JSON) dan perintah reproduksi</td></tr>
+  <tr><td>nmap_output/</td><td>Output mentah Nmap vulners (daftar lengkap 106 CVE)</td></tr>
 </table>
 <h4>Referensi</h4>
 <ul>
