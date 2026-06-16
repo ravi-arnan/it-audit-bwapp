@@ -8,3 +8,23 @@
 # temp
 *.tmp
 *.log
+
+# LibreOffice / Office lock files (report conversion pipeline)
+.~lock.*#
+
+# Node (npx retire, etc.)
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+
+# Local secrets / environment (never commit real credentials)
+.env
+.env.*
+*.local
+
+# Scratch / regenerated scan working dirs (keep curated evidence under doc/ only)
+/tmp_scan/
+*.bak
