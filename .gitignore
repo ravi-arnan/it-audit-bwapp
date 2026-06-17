@@ -19,6 +19,8 @@ npm-debug.log*
 # Python
 __pycache__/
 *.pyc
+.venv/
+venv/
 
 # Local secrets / environment (never commit real credentials)
 .env
