@@ -171,7 +171,7 @@ mp=[]
 for k,v in meta: mp.append([R(k+":  ",14,NAVY,True),R(v,14,INK)])
 text(sl,1.25,4.5,7.8,1.9,mp,space_after=9,line_spacing=1.0,anchor=MSO_ANCHOR.MIDDLE)
 try:
-    sl.shapes.add_picture("unud_logo.png",Inches(10.4),Inches(4.35),height=Inches(2.05))
+    sl.shapes.add_picture("../unud_logo.png",Inches(10.4),Inches(4.35),height=Inches(2.05))
 except Exception as e: print("logo:",e)
 
 # ============================================================ SLIDE 2 : APA ITU bWAPP
@@ -429,5 +429,5 @@ text(sl,1.2,4.1,8.3,1.95,[
   [R("Referensi:  ",14,TEALL,True),R("owasp.org/Top10  -  itsecgames.com",14,WHITE)],
 ],space_after=12,line_spacing=1.0,anchor=MSO_ANCHOR.MIDDLE)
 
-prs.save("presentasi_audit_bwapp.pptx")
-print("saved presentasi_audit_bwapp.pptx with",len(prs.slides.__iter__.__self__._sldIdLst),"slides")
+prs.save("2305551076_Ravi Arnan Irianto.pptx")
+print("saved 2305551076_Ravi Arnan Irianto.pptx with",len(prs.slides.__iter__.__self__._sldIdLst),"slides")
