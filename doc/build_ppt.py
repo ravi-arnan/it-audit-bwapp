@@ -428,9 +428,6 @@ text(sl,1.2,4.1,8.3,1.95,[
   [R("Demo cepat:  ",14,TEALL,True),R("http://localhost:8080  (login bee / bug)",14,WHITE)],
   [R("Referensi:  ",14,TEALL,True),R("owasp.org/Top10  -  itsecgames.com",14,WHITE)],
 ],space_after=12,line_spacing=1.0,anchor=MSO_ANCHOR.MIDDLE)
-try:
-    sl.shapes.add_picture("unud_logo.png",Inches(10.3),Inches(3.9),height=Inches(2.3))
-except Exception as e: print("logo2:",e)
 
 prs.save("presentasi_audit_bwapp.pptx")
 print("saved presentasi_audit_bwapp.pptx with",len(prs.slides.__iter__.__self__._sldIdLst),"slides")
